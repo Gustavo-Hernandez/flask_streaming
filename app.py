@@ -6,12 +6,15 @@
 # Import required libraries
 from flask import Flask, render_template, Response
 import cv2
+from picamera.array import PiRGBArray
+from picamera import PiCamera
 
 # Creating Flask app
 app = Flask(__name__)
 
 # Video processing variables
-cam = cv2.VideoCapture(0)  # local webcam
+camera = PiCamera()
+rawCapture = PiRGBArray(camera)
 
 # Video processing methods
 
@@ -23,13 +26,14 @@ def gen_frames():
     a Generator.
     """
     while True:
-        success_read, frame = cam.read()
-        if success_read:
+        try:
+            camera.capture(rawCapture, format="bgr")
+            frame = rawCapture.array
             _, buffer = cv2.imencode('.jpg', frame)
             frame = buffer.tobytes()
             # Frame concatenation
             yield (b'--frame\r\n'b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-        else:
+        except:
             print("Error while reading")
             break
 
